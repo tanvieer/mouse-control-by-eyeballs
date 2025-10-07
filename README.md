@@ -31,16 +31,27 @@ Run the script:
 python eye_mouse_control.py
 ```
 
-- The script will start capturing video from your webcam.
-- Your mouse cursor will move based on the detected eye position.
+- The script will start with a calibration phase. Follow the on-screen instructions to look at 5 points on the screen (top left, top right, bottom left, bottom right, center).
+- After calibration, your mouse cursor will move based on the detected eye position.
 - Press 'q' to quit.
 
 ## How it works
 
 - Uses OpenCV Haar cascades to detect faces and eyes.
-- Calculates the center of the detected eye.
-- Maps the eye position to screen coordinates.
+- Within each detected eye region, applies image processing to find the pupil (darkest area).
+- Calculates the center of the pupil(s) and averages them.
+- Maps the pupil position relative to the face bounding box to screen coordinates (automatic calibration).
+- Applies smoothing over multiple frames to reduce jittery movement.
 - Moves the mouse cursor accordingly.
+
+## Calibration
+
+The script automatically calibrates by mapping eye positions relative to your detected face. To improve accuracy:
+- Position your face centrally in the camera view.
+- Ensure good lighting so eyes are clearly visible.
+- Look around naturally; the mouse will move within the screen bounds based on your eye position within the face.
+
+The script prints logs in the terminal showing eye center coordinates, ratios, and mouse positions for manual calibration checks.
 
 ## Troubleshooting
 
