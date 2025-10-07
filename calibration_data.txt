@@ -1,0 +1,4 @@
+min_ratio_x: 0.3
+max_ratio_x: 0.8
+min_ratio_y: 0.3
+max_ratio_y: 0.5
