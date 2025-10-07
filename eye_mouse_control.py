@@ -79,7 +79,10 @@ if recalibrate:
                 for (ex, ey, ew, eh) in eyes:
                     eye_roi = roi_gray[ey:ey+eh, ex:ex+ew]
                     eye_roi = cv2.GaussianBlur(eye_roi, (7, 7), 0)
-                    _, threshold = cv2.threshold(eye_roi, 30, 255, cv2.THRESH_BINARY_INV)
+                    _, threshold = cv2.threshold(eye_roi, 40, 255, cv2.THRESH_BINARY_INV)
+                    # Apply morphology to clean up noise
+                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+                    threshold = cv2.morphologyEx(threshold, cv2.MORPH_OPEN, kernel)
                     contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                     if contours:
                         largest_contour = max(contours, key=cv2.contourArea)
@@ -89,7 +92,7 @@ if recalibrate:
                             cy_eye = int(M['m01'] / M['m00'])
                             eye_centers.append((x + ex + cx_eye, y + ey + cy_eye))
 
-                if eye_centers and len(eye_centers) > 0:
+                if len(eye_centers) > 0:
                     avg_x = sum(c[0] for c in eye_centers) / len(eye_centers)
                     avg_y = sum(c[1] for c in eye_centers) / len(eye_centers)
 
@@ -157,7 +160,10 @@ while True:
         for (ex, ey, ew, eh) in eyes:
             eye_roi = roi_gray[ey:ey+eh, ex:ex+ew]
             eye_roi = cv2.GaussianBlur(eye_roi, (7, 7), 0)
-            _, threshold = cv2.threshold(eye_roi, 30, 255, cv2.THRESH_BINARY_INV)
+            _, threshold = cv2.threshold(eye_roi, 40, 255, cv2.THRESH_BINARY_INV)
+            # Apply morphology to clean up noise
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+            threshold = cv2.morphologyEx(threshold, cv2.MORPH_OPEN, kernel)
             contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             if contours:
                 largest_contour = max(contours, key=cv2.contourArea)
@@ -216,8 +222,14 @@ while True:
         # Print logs for calibration
         print(f"Eye centers: {eye_centers}, Avg: ({avg_x:.2f}, {avg_y:.2f}), Ratios: ({eye_x_ratio:.2f}, {eye_y_ratio:.2f}), Mouse: ({smoothed_x}, {smoothed_y})")
 
-        # Move mouse with smooth animation
-        pyautogui.moveTo(smoothed_x, smoothed_y, duration=0.05)
+        # Draw gaze point on camera frame (scaled to frame size)
+        gaze_x = int((smoothed_x / screen_width) * frame.shape[1])
+        gaze_y = int((smoothed_y / screen_height) * frame.shape[0])
+        cv2.circle(frame, (gaze_x, gaze_y), 10, (0, 255, 255), -1)  # Yellow circle for gaze point
+        cv2.putText(frame, f"Gaze: ({smoothed_x}, {smoothed_y})", (gaze_x + 15, gaze_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+
+        # Move mouse with smooth animation (commented out for testing)
+        # pyautogui.moveTo(smoothed_x, smoothed_y, duration=0.05)
 
         # Draw rectangle around face (optional)
         cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
